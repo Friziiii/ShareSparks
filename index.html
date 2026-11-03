@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShareSpark — Trim & Share Videos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              500: '#7C3AED',
+              600: '#6D28D9',
+              700: '#5B21B6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .pill { border-radius: 9999px; }
+    .transition-smooth { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .spinner {
+      border: 3px solid #ede9fe;
+      border-top: 3px solid #7C3AED;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .modal-overlay {
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(4px);
+    }
+    /* Animated purple headline */
+    .headline-animate {
+      background: linear-gradient(90deg, #6D28D9, #A78BFA, #7C3AED, #C4B5FD, #6D28D9);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shine 4s linear infinite;
+    }
+    @keyframes shine {
+      to { background-position: 200% center; }
+    }
+    .social-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    .social-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+    }
+    .fb { background: #1877F2; }
+    .ig { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+    .tt { background: #000000; }
+    .x { background: #000000; }
+    .threads { background: #000000; }
+    .plan-slider {
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .plan-slider::-webkit-scrollbar {
+      display: none;
+    }
+    .plan-card {
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-800 min-h-screen flex flex-col font-sans antialiased">
+
+  <!-- Header / Logo -->
+  <header class="w-full px-6 py-5 flex items-center">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-10 flex items-center justify-center">
+        <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="36" height="60" viewBox="0 0 359.000000 600.000000" preserveAspectRatio="xMidYMid meet">
+          <g transform="translate(0.000000,600.000000) scale(0.100000,-0.100000)" fill="#be1aff" stroke="none">
+            <path d="M2941 5913 c-16 -32 -104 -222 -196 -423 -92 -201 -192 -416 -221 -479 -30 -62 -54 -115 -54 -117 0 -1 -18 -42 -41 -91 -86 -186 -423 -911 -451 -973 -74 -162 -226 -498 -237 -524 -7 -17 -16 -25 -21 -20 -4 5 -51 106 -103 224 -88 198 -519 1147 -600 1320 -19 41 -47 102 -61 134 -15 33 -28 57 -31 54 -5 -5 1 -20 108 -283 35 -88 108 -268 162 -400 138 -342 171 -422 317 -773 72 -172 128 -316 124 -319 -12 -12 -73 22 -121 67 -112 105 -388 344 -379 328 5 -9 76 -87 158 -173 82 -86 146 -158 144 -161 -3 -2 -106 25 -229 62 -123 36 -260 76 -304 89 -44 12 -262 75 -484 139 -222 64 -405 115 -407 113 -4 -3 1092 -567 1398 -719 59 -29 107 -57 107 -63 0 -5 -57 -37 -127 -70 -216 -102 -452 -218 -448 -222 3 -4 142 45 256 90 177 70 331 127 341 127 27 0 -7 -58 -79 -135 -75 -81 -507 -543 -747 -800 -218 -234 -408 -439 -434 -469 -91 -104 87 68 600 579 319 317 582 575 584 573 2 -2 -190 -581 -426 -1287 -236 -707 -427 -1286 -426 -1288 4 -3 92 183 287 607 65 140 229 496 365 790 354 764 548 1188 584 1274 7 17 16 25 21 20 4 -5 51 -106 103 -224 83 -187 349 -774 610 -1342 126 -275 112 -221 -35 142 -42 102 -120 293 -173 425 -119 294 -282 691 -364 885 -34 80 -61 148 -61 153 0 4 6 7 13 7 29 -2 83 -42 209 -155 222 -200 288 -257 288 -250 0 3 -70 81 -156 171 -86 91 -154 167 -152 170 5 4 221 -57 638 -181 237 -70 779 -225 787 -225 4 0 -23 17 -62 38 -116 63 -1254 645 -1373 701 -40 19 -72 40 -71 45 0 6 118 67 262 136 266 127 346 168 297 155 -14 -4 -148 -54 -297 -111 -150 -57 -277 -104 -283 -104 -5 0 -10 9 -10 20 0 22 18 41 434 486 159 170 344 368 410 439 159 171 238 255 312 335 90 96 131 144 117 139 -7 -2 -276 -267 -598 -588 -322 -321 -588 -582 -590 -580 -2 3 189 581 425 1287 236 705 427 1282 425 1282 -3 0 -18 -26 -34 -57z"/>
+          </g>
+        </svg>
+      </div>
+      <span class="text-xl font-semibold tracking-tight text-brand-600">ShareSpark</span>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 flex items-center justify-center px-6 py-10">
+    <div class="w-full max-w-lg">
+
+      <!-- STATE 1 + 2: Input + Processing -->
+      <div id="state-input" class="space-y-6">
+        <div class="text-center space-y-2 mb-8">
+          <h1 class="text-3xl font-bold tracking-tight headline-animate">Trim any video in seconds</h1>
+          <p class="text-gray-500 text-base">Paste a link. edit start & end time. Share instantly.</p>
+        </div>
+
+        <div class="relative">
+          <input
+            id="video-link"
+            type="text"
+            placeholder="Paste social media video link here..."
+            class="w-full px-5 py-4 text-base border-2 border-brand-500 rounded-full focus:outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-smooth placeholder:text-gray-400 bg-purple-50/40"
+          />
+        </div>
+
+        <button
+          id="process-btn"
+          onclick="startProcessing()"
+          class="w-full pill bg-brand-600 hover:bg-brand-700 text-white font-medium py-3.5 text-base transition-smooth shadow-sm hover:shadow-md"
+        >
+          Process Video
+        </button>
+
+        <!-- Swipeable Plans -->
+        <div class="plan-slider flex overflow-x-auto gap-4 pb-4 mt-2 -mx-2 px-2">
+          <!-- Free Plan -->
+          <div class="plan-card flex-shrink-0 w-[80%] min-w-[260px] bg-[#4C1D95] text-white rounded-3xl p-6 shadow-lg">
+            <h3 class="text-lg font-semibold mb-4">Free plan</h3>
+            <ul class="space-y-2.5 text-sm">
+              <li class="flex items-center gap-2"><i class="fas fa-check text-green-300 text-xs"></i> Expiry links</li>
+              <li class="flex items-center gap-2"><i class="fas fa-check text-green-300 text-xs"></i> Ads</li>
+              <li class="flex items-center gap-2"><i class="fas fa-check text-green-300 text-xs"></i> single video trimming</li>
+            </ul>
+          </div>
+
+          <!-- Pro Plan -->
+          <div class="plan-card flex-shrink-0 w-[80%] min-w-[260px] bg-[#3B0764] text-white rounded-3xl p-6 shadow-lg relative">
+            <h3 class="text-lg font-semibold mb-4">Pro plan</h3>
+            <ul class="space-y-2.5 text-sm">
+              <li class="flex items-center gap-2"><i class="fas fa-check text-green-300 text-xs"></i> Permanent links</li>
+              <li class="flex items-center gap-2"><i class="fas fa-check text-green-300 text-xs"></i> No Ads</li>
+              <li class="flex items-center gap-2"><i class="fas fa-check text-green-300 text-xs"></i> multiple videos trimming</li>
+            </ul>
+            <div class="absolute top-4 right-5 text-xs font-bold tracking-wider text-purple-200">SOON</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATE 2: Processing Spinner -->
+      <div id="state-processing" class="hidden flex flex-col items-center justify-center py-16 space-y-5">
+        <div class="spinner"></div>
+        <p class="text-gray-500 text-sm">Analyzing your video…</p>
+      </div>
+
+      <!-- STATE 3: Timestamps + Player -->
+      <div id="state-timestamps" class="hidden space-y-7 fade-in">
+        <!-- Video Player Placeholder -->
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden aspect-video flex items-center justify-center relative">
+          <div class="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200"></div>
+          <div class="relative text-center text-gray-400">
+            <i class="fas fa-play-circle text-5xl mb-3 opacity-60"></i>
+            <p class="text-sm font-medium">Video Preview</p>
+            <p class="text-xs mt-1">Duration: 5:00</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">Start Time</label>
+            <input
+              id="start-time"
+              type="text"
+              placeholder="0:00"
+              class="w-full px-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-smooth text-center"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">End Time</label>
+            <input
+              id="end-time"
+              type="text"
+              placeholder="0:30"
+              class="w-full px-4 py-3 border border-gray-200 rounded-full focus:outline-none focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-smooth text-center"
+            />
+          </div>
+        </div>
+
+        <div id="error-msg" class="hidden text-sm text-red-600 text-center font-medium"></div>
+
+        <button
+          id="generate-btn"
+          onclick="generateShareLink()"
+          class="w-full pill bg-brand-600 hover:bg-brand-700 text-white font-medium py-3.5 text-base transition-smooth shadow-sm hover:shadow-md"
+        >
+          Generate Share Link
+        </button>
+      </div>
+
+      <!-- STATE 4: Generating Spinner -->
+      <div id="state-generating" class="hidden flex flex-col items-center justify-center py-16 space-y-5">
+        <div class="spinner"></div>
+        <p class="text-gray-500 text-sm">Creating your shareable clip…</p>
+      </div>
+
+      <!-- STATE 5: Share Button -->
+      <div id="state-share" class="hidden flex flex-col items-center space-y-4 fade-in">
+        <div class="bg-green-50 border border-green-200 rounded-2xl p-6 w-full flex flex-col items-center text-center">
+          <i class="fas fa-check-circle text-green-500 text-3xl mb-3"></i>
+          <p class="text-green-800 font-medium">Clip ready to share</p>
+        </div>
+        <button
+          onclick="openShareModal()"
+          class="pill bg-brand-600 hover:bg-brand-700 text-white font-medium px-8 py-3.5 text-base transition-smooth shadow-sm hover:shadow-md"
+        >
+          <i class="fas fa-share-alt mr-2"></i> Share Clip
+        </button>
+        <button
+          onclick="createAnother()"
+          class="text-xs text-gray-400 hover:text-brand-600 transition-smooth underline underline-offset-2 mt-1"
+        >
+          create another
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-6 text-center text-xs text-gray-400 space-x-4">
+    <button onclick="openLegalModal('terms')" class="hover:text-brand-600 transition-smooth">Terms of Service</button>
+    <span class="text-gray-300">·</span>
+    <button onclick="openLegalModal('privacy')" class="hover:text-brand-600 transition-smooth">Privacy Policy</button>
+  </footer>
+
+  <!-- Share Modal -->
+  <div id="share-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="modal-overlay absolute inset-0" onclick="closeShareModal()"></div>
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-7 fade-in">
+      <button onclick="closeShareModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-smooth">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+      <div class="text-center mb-5">
+        <div class="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <i class="fas fa-link text-brand-600"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900">Your Share Link</h3>
+        <p class="text-sm text-gray-500 mt-1">Anyone with this link can view the trimmed clip</p>
+      </div>
+
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-center font-mono text-sm text-gray-700 mb-5 break-all">
+        https://sharespark.com
+      </div>
+
+      <button
+        id="copy-btn"
+        onclick="copyLink()"
+        class="w-full pill bg-brand-600 hover:bg-brand-700 text-white font-medium py-3.5 transition-smooth mb-6"
+      >
+        Copy Link
+      </button>
+
+      <!-- Social Share Circles -->
+      <div class="flex justify-center gap-3">
+        <a href="https://www.facebook.com" target="_blank" rel="noopener" class="social-btn fb" title="Facebook">
+          <i class="fab fa-facebook-f"></i>
+        </a>
+        <a href="https://www.instagram.com" target="_blank" rel="noopener" class="social-btn ig" title="Instagram">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="https://www.tiktok.com" target="_blank" rel="noopener" class="social-btn tt" title="TikTok">
+          <i class="fab fa-tiktok"></i>
+        </a>
+        <a href="https://x.com" target="_blank" rel="noopener" class="social-btn x" title="X">
+          <i class="fab fa-x-twitter"></i>
+        </a>
+        <a href="https://www.threads.net" target="_blank" rel="noopener" class="social-btn threads" title="Threads">
+          <i class="fab fa-threads"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Legal Modal -->
+  <div id="legal-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="modal-overlay absolute inset-0" onclick="closeLegalModal()"></div>
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto p-7 fade-in">
+      <button onclick="closeLegalModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-smooth">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+      <h3 id="legal-title" class="text-xl font-semibold text-gray-900 mb-4"></h3>
+      <div id="legal-content" class="text-sm text-gray-600 leading-relaxed space-y-3"></div>
+      <button
+        onclick="closeLegalModal()"
+        class="mt-6 w-full pill bg-gray-900 hover:bg-black text-white font-medium py-3 transition-smooth"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const VIDEO_DURATION = 300; // seconds
+
+    function startProcessing() {
+      const link = document.getElementById('video-link').value.trim();
+      if (!link) {
+        alert('Please paste a video link first.');
+        return;
+      }
+      document.getElementById('state-input').classList.add('hidden');
+      document.getElementById('state-processing').classList.remove('hidden');
+      document.getElementById('state-processing').classList.add('flex');
+
+      setTimeout(() => {
+        document.getElementById('state-processing').classList.add('hidden');
+        document.getElementById('state-processing').classList.remove('flex');
+        document.getElementById('state-timestamps').classList.remove('hidden');
+      }, 2000);
+    }
+
+    function parseTimeToSeconds(timeStr) {
+      if (!timeStr) return NaN;
+      timeStr = timeStr.trim();
+      if (timeStr.includes(':')) {
+        const parts = timeStr.split(':');
+        if (parts.length !== 2) return NaN;
+        const minutes = parseInt(parts[0], 10);
+        const seconds = parseInt(parts[1], 10);
+        if (isNaN(minutes) || isNaN(seconds) || seconds >= 60 || minutes < 0 || seconds < 0) return NaN;
+        return minutes * 60 + seconds;
+      } else {
+        // fallback pure seconds
+        const sec = parseFloat(timeStr);
+        return isNaN(sec) ? NaN : sec;
+      }
+    }
+
+    function generateShareLink() {
+      const startRaw = document.getElementById('start-time').value.trim();
+      const endRaw = document.getElementById('end-time').value.trim();
+      const errorEl = document.getElementById('error-msg');
+
+      errorEl.classList.add('hidden');
+      errorEl.textContent = '';
+
+      const start = parseTimeToSeconds(startRaw);
+      const end = parseTimeToSeconds(endRaw);
+
+      if (startRaw === '' || endRaw === '' || isNaN(start) || isNaN(end)) {
+        errorEl.textContent = 'Please enter valid times in MM:SS format (e.g. 0:30 or 1:15).';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      if (start < 0 || start > VIDEO_DURATION || end < 0 || end > VIDEO_DURATION) {
+        errorEl.textContent = `Times must be between 0:00 and 5:00.`;
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      if (start === end) {
+        errorEl.textContent = 'Start time and end time cannot be equal.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      if (end <= start) {
+        errorEl.textContent = 'End time must be greater than start time.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('state-timestamps').classList.add('hidden');
+      document.getElementById('state-generating').classList.remove('hidden');
+      document.getElementById('state-generating').classList.add('flex');
+
+      setTimeout(() => {
+        document.getElementById('state-generating').classList.add('hidden');
+        document.getElementById('state-generating').classList.remove('flex');
+        document.getElementById('state-share').classList.remove('hidden');
+        document.getElementById('state-share').classList.add('flex');
+      }, 1500);
+    }
+
+    function createAnother() {
+      // Reset everything back to initial state
+      document.getElementById('video-link').value = '';
+      document.getElementById('start-time').value = '';
+      document.getElementById('end-time').value = '';
+      document.getElementById('error-msg').classList.add('hidden');
+
+      document.getElementById('state-share').classList.add('hidden');
+      document.getElementById('state-share').classList.remove('flex');
+      document.getElementById('state-timestamps').classList.add('hidden');
+      document.getElementById('state-generating').classList.add('hidden');
+      document.getElementById('state-generating').classList.remove('flex');
+      document.getElementById('state-processing').classList.add('hidden');
+      document.getElementById('state-processing').classList.remove('flex');
+
+      document.getElementById('state-input').classList.remove('hidden');
+    }
+
+    function openShareModal() {
+      document.getElementById('share-modal').classList.remove('hidden');
+      document.getElementById('share-modal').classList.add('flex');
+      document.getElementById('copy-btn').textContent = 'Copy Link';
+      document.getElementById('copy-btn').className = 'w-full pill bg-brand-600 hover:bg-brand-700 text-white font-medium py-3.5 transition-smooth mb-6';
+    }
+
+    function closeShareModal() {
+      document.getElementById('share-modal').classList.add('hidden');
+      document.getElementById('share-modal').classList.remove('flex');
+    }
+
+    function copyLink() {
+      navigator.clipboard.writeText('https://sharespark.com').then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = 'Copied!';
+        btn.classList.add('bg-green-600', 'hover:bg-green-700');
+        btn.classList.remove('bg-brand-600', 'hover:bg-brand-700');
+        setTimeout(() => {
+          btn.textContent = 'Copy Link';
+          btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+          btn.classList.add('bg-brand-600', 'hover:bg-brand-700');
+        }, 2000);
+      }).catch(() => {
+        alert('Failed to copy. Please copy manually: https://sharespark.com');
+      });
+    }
+
+    function openLegalModal(type) {
+      const title = document.getElementById('legal-title');
+      const content = document.getElementById('legal-content');
+
+      if (type === 'terms') {
+        title.textContent = 'Terms of Service';
+        content.innerHTML = `
+          <p><strong>Last updated:</strong> November 2026</p>
+          <p>Welcome to ShareSpark. By using our service you agree to these terms.</p>
+          <p>ShareSpark currently supports clips from <strong>5 platforms only</strong>: Facebook, Instagram, TikTok, X (Twitter), and Threads.</p>
+          <p>ShareSpark allows you to create short clips from publicly available social media videos for personal sharing. You are responsible for ensuring you have the rights to share any content.</p>
+          <p>We do not host original video files. Clips are temporary and may be removed at any time.</p>
+          <p>These terms may be updated. Continued use of ShareSpark constitutes acceptance of the revised terms.</p>
+        `;
+      } else {
+        title.textContent = 'Privacy Policy';
+        content.innerHTML = `
+          <p><strong>Last updated:</strong> November 2026</p>
+          <p>ShareSpark respects your privacy. We only process the video links you provide to generate temporary shareable clips.</p>
+          <p>We do not store your personal information beyond what is necessary to operate the service. Video links and generated clips are retained only for a limited period.</p>
+          <p>We do not sell or share your data with third parties for marketing purposes.</p>
+          <p>By using ShareSpark you consent to the collection and use of information as described in this policy.</p>
+        `;
+      }
+
+      document.getElementById('legal-modal').classList.remove('hidden');
+      document.getElementById('legal-modal').classList.add('flex');
+    }
+
+    function closeLegalModal() {
+      document.getElementById('legal-modal').classList.add('hidden');
+      document.getElementById('legal-modal').classList.remove('flex');
+    }
+
+    // Close modals on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeShareModal();
+        closeLegalModal();
+      }
+    });
+  </script>
+</body>
+</html>
